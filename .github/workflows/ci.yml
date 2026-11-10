@@ -30,3 +30,6 @@ jobs:
 
       - name: Тесты (pytest)
         run: pytest -q
+
+permissions:
+  contents: read
