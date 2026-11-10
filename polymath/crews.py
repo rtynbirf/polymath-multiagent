@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from .agent import Agent
+from .pid1 import ChildSpec
 
 
 def demo_agents() -> list[Agent]:
@@ -44,4 +45,39 @@ def demo_agents() -> list[Agent]:
         Agent(name="Зодчий", skill="architecture", act=architect),
         Agent(name="Кузнец", skill="coding", act=coder),
         Agent(name="Софист", skill="critique", act=critic),
+    ]
+
+
+def pid1_demo_specs() -> list[ChildSpec]:
+    """Демо-экипаж ПИД1: Кузнец бракует первые два удара — ПИД1 учит.
+
+    Скаут и Софист стабильны (one_for_one: их это не трогает), Кузнец
+    живёт по systemd-политике рестартов и доковывает со третьего удара.
+    """
+
+    hammer: dict[str, int] = {"strikes": 0}
+
+    async def scout(task: str) -> list[str]:
+        await asyncio.sleep(0.3)
+        return [f"Разведка: «{task}» разведано с воздуха"]
+
+    async def smith(task: str) -> list[str]:
+        hammer["strikes"] += 1
+        if hammer["strikes"] <= 2:
+            raise RuntimeError(f"брак в заготовке (удар №{hammer['strikes']})")
+        await asyncio.sleep(0.4)
+        return [f"Кузнец: «{task}» доковано со {hammer['strikes']}-го удара"]
+
+    async def critic(task: str) -> list[str]:
+        await asyncio.sleep(0.2)
+        return [f"Софист: «{task}» выдерживает критику"]
+
+    return [
+        ChildSpec(agent=Agent(name="Скаут", skill="research", act=scout)),
+        ChildSpec(
+            agent=Agent(name="Кузнец", skill="coding", act=smith),
+            max_restarts=3,
+            backoff_base=0.05,
+        ),
+        ChildSpec(agent=Agent(name="Софист", skill="critique", act=critic)),
     ]
