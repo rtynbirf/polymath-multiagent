@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "polymath-multiagent"
-version = "0.2.0"
+version = "0.3.0"
 description = "Полимат = Мультиагент: параллельная оркестрация агентов, где одно другое не исключает"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,7 +23,7 @@ classifiers = [
 
 [project.optional-dependencies]
 mcp = ["fastmcp>=2.10,<3"]
-dev = ["pytest>=8", "ruff>=0.6", "fastmcp>=2.10,<3"]
+dev = ["pytest>=8", "ruff>=0.6", "fastmcp>=2.10,<3", "pyyaml>=6"]
 
 [project.scripts]
 polymath = "polymath.cli:main"
