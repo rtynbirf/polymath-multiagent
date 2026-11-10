@@ -38,6 +38,7 @@ from dataclasses import dataclass
 from .agent import Agent
 from .orchestrator import Synthesis
 from .pid1 import ChildSpec, Event, PolymathPid1, QuarantinedError
+from .ritual import WORK_BEGUN, WORK_DONE, HouseRitual
 from .supervisor import AuditViolation, audit
 
 # Алфавит Σ: события ПИД1 — единственные слова, на которых говорит экипаж.
@@ -342,6 +343,8 @@ class DriveReport:
     proofs: tuple[str, ...]
     synthesis: Synthesis | None
     summary: str
+    house_cleaned: bool = True
+    house_word: tuple[str, ...] = ()
 
 
 class AutomatonPid1(PolymathPid1):
@@ -364,6 +367,7 @@ class AutomatonPid1(PolymathPid1):
             state: dict(row) for state, row in source.items()
         }
         self._proofs = verify(self._table, ALPHABET, INITIAL, ACCEPTING)
+        self._accepting = frozenset(ACCEPTING)
         self.state = INITIAL
         self.word: list[str] = []
         self._user_sink = on_event
@@ -389,13 +393,13 @@ class AutomatonPid1(PolymathPid1):
 
     def finish(self) -> bool:
         """Слово прогона принято: вычисление кончилось в допускающем состоянии."""
-        return self.state in ACCEPTING
+        return self.state in self._accepting
 
     def proofs(self) -> list[str]:
         """Теория: экзамен таблицы + минимизация Мура с доказательством эквивалентности."""
-        minimal = minimize(self._table, ALPHABET, INITIAL, ACCEPTING)
+        minimal = minimize(self._table, ALPHABET, INITIAL, self._accepting)
         saved = equivalent(
-            self._table, INITIAL, ACCEPTING, minimal, INITIAL, ACCEPTING, ALPHABET
+            self._table, INITIAL, self._accepting, minimal, INITIAL, self._accepting, ALPHABET
         )
         return [
             *self._proofs,
@@ -405,29 +409,64 @@ class AutomatonPid1(PolymathPid1):
             ),
         ]
 
+    def learn(
+        self,
+        table: dict[str, dict[str, str]],
+        initial: str = INITIAL,
+        accepting: Iterable[str] = ACCEPTING,
+    ) -> tuple[str, ...]:
+        """Обучение: новая таблица входит только через экзамены теории.
+
+        1. verify — больная таблица не входит (детерминизм, полнота,
+           достижимость, допуск, единственность вердикта);
+        2. эквивалентность (Хопкрофт–Уллман) — новая машина обязана вести
+           себя как старая: обучение меняет реализацию, а не поведение;
+           смена поведения — сознательное отступление, а не «обучение»;
+        3. после вступления доказательства переполучены — автомат
+           продолжает жить с новой таблицей и свежими доказательствами.
+        """
+        verify(table, ALPHABET, initial, accepting)
+        if not equivalent(
+            self._table, INITIAL, self._accepting, table, initial, accepting, ALPHABET
+        ):
+            raise AutomatonViolation(
+                "Новая таблица меняет поведение: это не обучение, а другая машина"
+            )
+        self._table = {state: dict(row) for state, row in table.items()}
+        self._accepting = frozenset(accepting)
+        self._proofs = verify(self._table, ALPHABET, INITIAL, self._accepting)
+        return tuple(self._proofs)
+
     async def drive(self, mandate: str, max_rounds: int = 6) -> DriveReport:
         """Автономный цикл без Хозяина: ПИД1 ведёт экипаж, автомат принимает слово,
-        Надзиратель аудитит. Отклонённое слово не убивает машину — она просит мандат.
+        Надзиратель аудитит, Закон Дома закрывает дом при любом исходе.
+        Отклонённое слово не убивает машину — она просит мандат.
         """
         if not mandate.strip():
             raise AutomatonViolation("Пустой мандат: автомат не принимает пустое слово")
+        ritual = HouseRitual(on_step=self._emit)
+        ritual.step(WORK_BEGUN)  # поработал
         synthesis: Synthesis | None = None
         verdicts: tuple[str, ...] = ()
         accepted = True
         try:
-            synthesis = await self.run(mandate, max_rounds)
-        except QuarantinedError:
-            accepted = False
-            verdicts = ("ПИД1 жив, экипаж пуст — нужен новый мандат",)
-        else:
-            if not self.finish():
-                raise AutomatonViolation(
-                    f"Слово прогона отклонено автоматом: финал «{self.state}» не допускается"
-                )
             try:
-                verdicts = tuple(audit(synthesis))
-            except AuditViolation as exc:  # деградация поймана — машина не умирает
-                verdicts = (f"Надзиратель отклонил синтез: {exc}",)
+                synthesis = await self.run(mandate, max_rounds)
+            except QuarantinedError:
+                accepted = False
+                verdicts = ("ПИД1 жив, экипаж пуст — нужен новый мандат",)
+            else:
+                if not self.finish():
+                    raise AutomatonViolation(
+                        f"Слово прогона отклонено автоматом: финал «{self.state}» не допускается"
+                    )
+                try:
+                    verdicts = tuple(audit(synthesis))
+                except AuditViolation as exc:  # деградация поймана — машина не умирает
+                    verdicts = (f"Надзиратель отклонил синтез: {exc}",)
+                ritual.step(WORK_DONE)  # сделал — только у принятого прогона
+        finally:
+            ritual.close()  # убрал за собой — закон дома при любом исходе
         if synthesis is None:
             summary = (
                 f"Мандат «{mandate}»: слово из {len(self.word)} символов отклонено "
@@ -453,6 +492,8 @@ class AutomatonPid1(PolymathPid1):
             proofs=tuple(self.proofs()),
             synthesis=synthesis,
             summary=summary,
+            house_cleaned=ritual.cleaned,
+            house_word=tuple(ritual.word),
         )
 
 

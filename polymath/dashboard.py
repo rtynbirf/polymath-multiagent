@@ -237,7 +237,7 @@ const grid = document.getElementById('crew');
 const log = document.getElementById('log');
 const stamp = () => new Date().toLocaleTimeString('ru-RU');
 function logLine(type, text) {
-  const gold = ['synthesis', 'verdict', 'automaton_verdict'].includes(type);
+  const gold = ['synthesis', 'verdict', 'automaton_verdict', 'house_cleaned'].includes(type);
   const red = ['error', 'violation', 'pid1_quarantined', 'pid1_child_down'].includes(type);
   const cls = gold ? 'g' : (red ? 'e' : '');
   const div = document.createElement('div');
@@ -339,6 +339,12 @@ es.onmessage = (e) => {
       v.textContent = `🤖 АВТОМАТ ОТКЛОНИЛ СЛОВО · цикл #${ev.cycle}: финал «${ev.final_state}» — экипаж пуст, ПИД1 жив и просит новый мандат`;
       logLine(ev.type, 'слово отклонено — эмпатия: машина просит, а не умирает');
     }
+  }
+  if (ev.type === 'ritual_step') {
+    logLine(ev.type, `ритуал: ${ev.symbol} → ${ev.state} (шаг ${ev.step})`);
+  }
+  if (ev.type === 'house_cleaned') {
+    logLine(ev.type, `дом чист: убрал за собой (${ev.steps} шагов ритуала) — ноль нотификаций`);
   }
   if (ev.type === 'error') logLine(ev.type, ev.message);
 };

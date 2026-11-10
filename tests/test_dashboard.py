@@ -47,8 +47,10 @@ class TestPid1Cycle(unittest.TestCase):
         while not queue.empty():
             events.append(queue.get(timeout=1))
         types = [event["type"] for event in events]
-        self.assertEqual(types[0], "pid1_started")
+        self.assertEqual(types[0], "ritual_step")  # закон дома: поработал — первым
+        self.assertIn("pid1_started", types)
         self.assertIn("automaton_step", types)
+        self.assertIn("house_cleaned", types)  # убрал за собой — до вердикта
         self.assertEqual(types[-1], "automaton_verdict")
         verdict = events[-1]
         self.assertTrue(verdict["accepted"])

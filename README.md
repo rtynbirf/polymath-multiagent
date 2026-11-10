@@ -95,8 +95,8 @@ except DuplicateSkillError as e:
 ## ✅ Тесты и CI
 
 ```bash
-pytest -q      # 58 тестов: контракт навыков, параллельность, синтез, MCP, SSE,
-               # надзор, ПИД1, теория конечных автоматов, CI-ритуал
+pytest -q      # 76 тестов: контракт навыков, параллельность, синтез, MCP, SSE,
+               # надзор, ПИД1, теория конечных автоматов, закон дома, CI-ритуал
 ruff check .   # чистота кода
 ```
 
@@ -240,13 +240,61 @@ crew = demo_agents() + [supervisor_agent(), automaton_agent()]  # навык aut
 Эмерджентность: агент, который сам ведёт экипаж, сам доказывает корректность
 своего поведения и сам называет, где сознательно отошёл от гуру.
 
+## 🏠 Закон дома · поработал → сделал → убрал за собой
+
+Обязательный алгоритм действий — не заповедь на стене, а конечный автомат
+(`polymath/ritual.py`): ΠΣ = {работа_начата, работа_сделана, за_собой_убрано},
+δ доопределена до тупика «грязь», принимается только чистый дом.
+
+```mermaid
+stateDiagram-v2
+    [*] --> покой
+    покой --> работа: работа_начата
+    работа --> сделано: работа_сделана
+    сделано --> дом_чист: за_собой_убрано ✓ (допуск)
+    работа --> дом_чист: за_собой_убрано (закрыл незавершённое)
+    дом_чист --> работа: новый день
+    сделано --> грязь: работа_начата / работа_сделана (без уборки — тупик навсегда)
+```
+
+Три структурных закона, проверяемых перебором всех слов (`house_exam`):
+
+- **НИКАКИХ нотификаций**: в алфавите нет символа «уведомить хозяина» — дом
+  закрывает и решает всё сам; это структура Σ, а не обещание;
+- **принимаются только слова, кончающиеся уборкой**: «сделал и не убрал»
+  отвергается навсегда (6 из 120 слов до 4 символов — чистые);
+- **ритуал обязателен при любом исходе**: Автомат ПИД1 закрывает дом через
+  `finally` — и при вердикте, и при карантине.
+
+Обучение без правки на глазок: `AutomatonPid1.learn(table)` принимает новую
+таблицу только через экзамены теории (`verify`) и эквивалентность поведения
+(Хопкрофт–Уллман) — «обучение меняет реализацию, не поведение».
+
+```bash
+polymath dom   # Домовой осматривает дом: перебор, законы, чистота
+```
+
+```python
+from polymath import HouseRitual, house_law_agent
+from polymath.ritual import WORK_BEGUN, WORK_DONE
+
+ritual = HouseRitual()
+ritual.step(WORK_BEGUN)  # поработал
+ritual.step(WORK_DONE)   # сделал
+ritual.close()           # убрал за собой → «дом чист» (идемпотентно)
+crew = demo_agents() + [house_law_agent()]  # навык ritual уникален
+```
+
+Эмерджентность: закон, который нельзя нарушить, потому что он — таблица
+переходов, а не инструкция.
+
 ## 🗺️ Дорожная карта
 
 | Фаза | Что будет |
 |------|-----------|
 | v0.2 | ✅ **MCP-сервер** — Полимат как инструменты для любых LLM-хостов |
 | v0.3 | ✅ **Живой дашборд** — SSE-оркестрация в браузере, stdlib-only |
-| v0.4 | ✅ **Надзор стал жизнью** — ПИД1 (init × OTP × systemd) и Автомат на теории конечных автоматов: минимизация Мура, теорема о ядре с OTP, автономный `drive` без Хозяина |
+| v0.4 | ✅ **Надзор стал жизнью** — ПИД1 (init × OTP × systemd), Автомат на теории конечных автоматов (минимизация Мура, теорема о ядре с OTP, автономный `drive` без Хозяина) и Закон дома: поработал → сделал → убрал за собой |
 | v0.5 | Распределённый режим: агенты в разных процессах/на разных машинах |
 | v0.6 | Опциональные LLM-провайдеры внутри агентов |
 
@@ -260,8 +308,11 @@ Its philosophy is enforced in code: agents with unique skills run **simultaneous
 formalized as a **finite-state automaton**: the crew's life is a word over the event
 alphabet, runs must be accepted by the DFA (Moore minimization, Hopcroft–Ullman
 product equivalence proves the OTP-core theorem), and `polymath automat` drives the
-whole crew autonomously — no human in the loop. Install with `pip install -e ".[dev]"`,
-run `polymath demo`, and watch four agents finish in the time of the slowest one.
+whole crew autonomously — no human in the loop. The **House Law** (`polymath dom`)
+makes cleanup a DFA too: the alphabet has no notify-the-master symbol, and every
+run — success or quarantine — ends cleaned up via `finally`. Install with
+`pip install -e ".[dev]"`, run `polymath demo`, and watch four agents finish in
+the time of the slowest one.
 
 ## 📄 Лицензия
 

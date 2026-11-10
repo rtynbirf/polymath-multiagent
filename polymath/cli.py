@@ -17,7 +17,7 @@ BANNER = r"""
 | '_ \ / _ \ | |/ _ \ | | | '_ ` _ \ / _ \ '_ \ / _` | / _` |/ _ \ \ / /
 | |_) |  __/ | |  __/ |_| | | | | | |  __/ | | | (_| || (_| |  __/\ V /
 |_.__/ \___|_|_|\___|\__,_|_| |_| |_|\___|_| |_|\__,_| \__,_|\___| \_/
-              ПОЛИМАТ = МУЛЬТИАГЕНТ  |  v0.3.0
+              ПОЛИМАТ = МУЛЬТИАГЕНТ  |  v0.4.0
 """
 
 
@@ -114,10 +114,39 @@ def run_automaton() -> int:
         f"Реестр попыток: {report.attempts} = {report.completions} успехов "
         f"+ {report.restarts} рестартов (зомби невозможны)"
     )
+    print(
+        f"Закон дома: {'дом чист' if report.house_cleaned else 'грязь'} — "
+        f"{' → '.join(report.house_word)}"
+    )
     for verdict in report.verdicts:
         print(f"  + {verdict}")
     print("Отступления от OTP-гуру сознательны: карантин, вердикт, деградация (docs/OTP.md)")
     print("Пределы надзора не отменены (Гёдель II) — см. polymath audit.")
+    return 0
+
+
+def run_dom() -> int:
+    """Домовой осматривает дом: закон исполняется, а не рассказывается."""
+    from .ritual import house_exam, house_law_agent
+
+    exam = house_exam()
+    print("ЗАКОН ДОМА: поработал → сделал → убрал за собой (никаких нотификаций)")
+    print("-" * 60)
+    print(
+        f"  перебор всех слов до {exam.max_len} символов: принято "
+        f"{exam.accepted}, отвергнуто {exam.rejected}"
+    )
+    print(
+        f"  «сделал и не убрал» не допускается: "
+        f"{not exam.made_without_cleanup_accepted}"
+    )
+    print(f"  алфавит без уведомлений Хозяину: {exam.notify_free}")
+    print("-" * 60)
+    agent = house_law_agent()
+    report = asyncio.run(agent.execute("осмотреть дом после работы"))
+    for finding in report.findings:
+        print(f"  + {finding}")
+    print("Дом закрывается сам — ноль нотификаций, ноль Хозяина в контуре.")
     return 0
 
 
@@ -147,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
         "command",
         nargs="?",
         default="demo",
-        choices=["demo", "audit", "pid1", "automat", "mcp", "dashboard"],
+        choices=["demo", "audit", "pid1", "automat", "dom", "mcp", "dashboard"],
         help="команда (по умолчанию — demo)",
     )
     parser.add_argument(
@@ -165,6 +194,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_pid1()
     elif args.command == "automat":
         return run_automaton()
+    elif args.command == "dom":
+        return run_dom()
     elif args.command == "mcp":
         return run_mcp()
     elif args.command == "dashboard":
