@@ -17,7 +17,7 @@ BANNER = r"""
 | '_ \ / _ \ | |/ _ \ | | | '_ ` _ \ / _ \ '_ \ / _` | / _` |/ _ \ \ / /
 | |_) |  __/ | |  __/ |_| | | | | | |  __/ | | | (_| || (_| |  __/\ V /
 |_.__/ \___|_|_|\___|\__,_|_| |_| |_|\___|_| |_|\__,_| \__,_|\___| \_/
-              ПОЛИМАТ = МУЛЬТИАГЕНТ  |  v0.4.0
+              ПОЛИМАТ = МУЛЬТИАГЕНТ  |  v0.5.0
 """
 
 
@@ -150,6 +150,21 @@ def run_dom() -> int:
     return 0
 
 
+def run_ope() -> int:
+    """ОПЕ-0: среда сама находит предел модели и мутирует метамодель."""
+    from .ope import ope_agent
+
+    print("ОПЕ: Ω_t → Discover(ΔΦ) → Ω_{t+1} — порождать возможности, а не исполнять команды")
+    print("-" * 60)
+    agent = ope_agent()
+    report = asyncio.run(agent.execute("породить возможность, которой не было"))
+    for finding in report.findings:
+        print(f"  + {finding}")
+    print("-" * 60)
+    print("Генезис жив: генератор выдумывает, верификатор судит, дом закрыт.")
+    return 0
+
+
 def run_mcp() -> int:
     """Запустить MCP-сервер (stdio). Требует extra: ``[mcp]``."""
     from .mcp_server import mcp
@@ -176,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
         "command",
         nargs="?",
         default="demo",
-        choices=["demo", "audit", "pid1", "automat", "dom", "mcp", "dashboard"],
+        choices=["demo", "audit", "pid1", "automat", "dom", "ope", "mcp", "dashboard"],
         help="команда (по умолчанию — demo)",
     )
     parser.add_argument(
@@ -196,6 +211,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_automaton()
     elif args.command == "dom":
         return run_dom()
+    elif args.command == "ope":
+        return run_ope()
     elif args.command == "mcp":
         return run_mcp()
     elif args.command == "dashboard":

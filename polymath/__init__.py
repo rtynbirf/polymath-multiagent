@@ -6,15 +6,17 @@
 
 from .agent import Agent, AgentReport
 from .automaton import AutomatonPid1, AutomatonViolation, DriveReport, automaton_agent
+from .ope import OPE, MetaModel, OPEViolation, PossibilityRecord, ope_agent
 from .orchestrator import DuplicateSkillError, PolymathOrchestrator, Synthesis
 from .pid1 import ChildSpec, PolymathPid1, QuarantinedError
 from .ritual import HouseRitual, RitualViolation, house_law_agent
 from .supervisor import LIMITS, AuditViolation, audit, supervisor_agent
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "LIMITS",
+    "OPE",
     "Agent",
     "AgentReport",
     "AuditViolation",
@@ -24,8 +26,11 @@ __all__ = [
     "DriveReport",
     "DuplicateSkillError",
     "HouseRitual",
+    "MetaModel",
+    "OPEViolation",
     "PolymathOrchestrator",
     "PolymathPid1",
+    "PossibilityRecord",
     "QuarantinedError",
     "RitualViolation",
     "Synthesis",
@@ -33,5 +38,6 @@ __all__ = [
     "audit",
     "automaton_agent",
     "house_law_agent",
+    "ope_agent",
     "supervisor_agent",
 ]

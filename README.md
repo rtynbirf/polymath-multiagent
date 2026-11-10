@@ -95,8 +95,8 @@ except DuplicateSkillError as e:
 ## ✅ Тесты и CI
 
 ```bash
-pytest -q      # 76 тестов: контракт навыков, параллельность, синтез, MCP, SSE,
-               # надзор, ПИД1, теория конечных автоматов, закон дома, CI-ритуал
+pytest -q      # 90 тестов: контракт навыков, параллельность, синтез, MCP, SSE,
+               # надзор, ПИД1, теория конечных автоматов, закон дома, ОПЕ, CI-ритуал
 ruff check .   # чистота кода
 ```
 
@@ -288,6 +288,61 @@ crew = demo_agents() + [house_law_agent()]  # навык ritual уникален
 Эмерджентность: закон, который нельзя нарушить, потому что он — таблица
 переходов, а не инструкция.
 
+## 🌌 ОПЕ · среда открытого порождения возможностей (OPE-0)
+
+Исследование Хозяина «Человек ≡ ⟨S,E,Uq,Uv⟩» стало машиной: модель — DFA,
+явление — слово, невыразимость — символ вне Σ, пространство возможностей Ω —
+измеримо перебором (`polymath/ope.py`, карта «исследование → код» — в
+[docs/OPE.md](docs/OPE.md)).
+
+```mermaid
+stateDiagram-v2
+    [*] --> неизвестно: гипотеза_сформулирована
+    неизвестно --> опровергнуто: предела нет (честный ноль)
+    неизвестно --> проверяемо: предел найден
+    проверяемо --> частично_проверено: новизна доказана
+    частично_проверено --> воспроизведено: протокол совпал дважды ✓
+    проверяемо --> опровергнуто: закон Φ2 против потери старых слов
+    воспроизведено --> неизвестно: новая гипотеза (новый цикл)
+```
+
+Живой эксперимент OPE-0 (детерминированный, без LLM):
+
+- **вариация**: слово внутри Ω(M0) → гипотеза новизны честно `FALSIFIED`;
+- **невыразимость**: «ребёнок вырос» = `pid1_child_promoted` вне Σ → мутация:
+  +символ, +состояние «рост»;
+- **экзамены**: verify + **теорема о монотонности** L(M0) ⊆ L(M1) (обход
+  произведения) + **строгая новизна** L(M0) ≠ L(M1) → `REPRODUCED`;
+- **эмерджентность измерена**: Ω(4) 33 → 50 слов (+17, все с «ростом»);
+- **зубы Φ2**: немонотонная мутация → `FALSIFIED` — новый закон метамодели
+  работает; самовольный вердикт генератора → `BLOCKED` (полномочия разделены);
+- **откат**: `rollback()` возвращает M0, история не уничтожается;
+  `record.identity is None` — Хозяин не моделируется (запрет №1).
+
+```bash
+polymath ope   # Генезис: предел → мутация → теоремы → Φ2 → дом чист
+```
+
+```python
+from polymath import OPE, ope_agent
+
+ope = OPE()
+record = ope.discover(("pid1_started", "pid1_child_promoted", "pid1_verdict"))
+print(record.verdict, ope.model.version, ope.theory_version)
+# REPRODUCED M0-ПИД1+pid1_child_promoted Φ2
+
+crew = demo_agents() + [
+    supervisor_agent(),
+    automaton_agent(),
+    house_law_agent(),
+    ope_agent(),   # 8 навыков — ноль дублей, совместимость без унификации
+]
+```
+
+Эмерджентность: среда, которая сама находит свой предел, сама предлагает
+мутацию метамодели и сама называет, где наука кончается и начинается гипотеза
+(`LIMITS_OPE`).
+
 ## 🗺️ Дорожная карта
 
 | Фаза | Что будет |
@@ -295,8 +350,9 @@ crew = demo_agents() + [house_law_agent()]  # навык ritual уникален
 | v0.2 | ✅ **MCP-сервер** — Полимат как инструменты для любых LLM-хостов |
 | v0.3 | ✅ **Живой дашборд** — SSE-оркестрация в браузере, stdlib-only |
 | v0.4 | ✅ **Надзор стал жизнью** — ПИД1 (init × OTP × systemd), Автомат на теории конечных автоматов (минимизация Мура, теорема о ядре с OTP, автономный `drive` без Хозяина) и Закон дома: поработал → сделал → убрал за собой |
-| v0.5 | Распределённый режим: агенты в разных процессах/на разных машинах |
-| v0.6 | Опциональные LLM-провайдеры внутри агентов |
+| v0.5 | ✅ **ОПЕ (OPE-0)** — среда открытого порождения возможностей: вариация/инновация/трансформация, теорема о монотонности L(M0) ⊆ L(M1), рост Ω, лестница вердиктов, зубы Φ2 |
+| v0.6 | Распределённый режим: агенты в разных процессах/на разных машинах |
+| v0.7 | Опциональные LLM-провайдеры внутри агентов |
 
 ## 🇬🇧 English in one paragraph
 
@@ -310,9 +366,14 @@ alphabet, runs must be accepted by the DFA (Moore minimization, Hopcroft–Ullma
 product equivalence proves the OTP-core theorem), and `polymath automat` drives the
 whole crew autonomously — no human in the loop. The **House Law** (`polymath dom`)
 makes cleanup a DFA too: the alphabet has no notify-the-master symbol, and every
-run — success or quarantine — ends cleaned up via `finally`. Install with
-`pip install -e ".[dev]"`, run `polymath demo`, and watch four agents finish in
-the time of the slowest one.
+run — success or quarantine — ends cleaned up via `finally`. v0.5 adds the
+**Open Possibility Environment** (OPE-0): the model is a DFA, a phenomenon is a
+word, inexpressibility is a symbol outside Σ; mutations are admitted only through
+theory exams — structure verify, the monotonicity theorem L(M0) ⊆ L(M1) via product
+traversal, strict novelty L(M0) ≠ L(M1), double protocol reproduction — with a
+verdict-ladder DFA (self-approved verdicts are BLOCKED). Ω growth is measured,
+not declared: 33 → 50 words. Install with `pip install -e ".[dev]"`, run
+`polymath demo`, and watch four agents finish in the time of the slowest one.
 
 ## 📄 Лицензия
 
