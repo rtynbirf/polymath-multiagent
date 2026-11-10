@@ -22,6 +22,7 @@ name: "Доктор гейтов — самозажив транзиентов (
 #   список следующей сменой ритуала.
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows:
       - "CI"
