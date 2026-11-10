@@ -6,7 +6,7 @@ import time
 import unittest
 import urllib.request
 
-from polymath.dashboard import EventBus, make_server, orchestration_cycle
+from polymath.dashboard import EventBus, make_server, orchestration_cycle, pid1_cycle
 
 
 class TestEventBus(unittest.TestCase):
@@ -36,6 +36,54 @@ class TestOrchestrationCycle(unittest.TestCase):
         self.assertEqual(types.count("agent_started"), 4)
         self.assertEqual(types.count("agent_finished"), 4)
         self.assertEqual(types[-1], "synthesis")
+
+
+class TestPid1Cycle(unittest.TestCase):
+    def test_pid1_cycle_publishes_word_and_machine_verdict(self) -> None:
+        bus = EventBus()
+        queue = bus.subscribe()
+        __import__("asyncio").run(pid1_cycle(bus, 3, "проверка ПИД1"))
+        events = []
+        while not queue.empty():
+            events.append(queue.get(timeout=1))
+        types = [event["type"] for event in events]
+        self.assertEqual(types[0], "pid1_started")
+        self.assertIn("automaton_step", types)
+        self.assertEqual(types[-1], "automaton_verdict")
+        verdict = events[-1]
+        self.assertTrue(verdict["accepted"])
+        self.assertEqual(verdict["final_state"], "доверие")
+        self.assertTrue(all(event.get("cycle") == 3 for event in events))
+
+    def test_pid1_cycle_shows_quarantine_red_event(self) -> None:
+        """Карантин летит в браузер отдельным красным событием — с навыком."""
+        from polymath import ChildSpec
+        from polymath.agent import Agent
+
+        async def broken(task: str) -> list[str]:
+            raise RuntimeError("вечный брак")
+
+        async def ok(task: str) -> list[str]:
+            return ["ок"]
+
+        specs = [
+            ChildSpec(agent=Agent(name="Брак", skill="broken", act=broken), max_restarts=0),
+            ChildSpec(agent=Agent(name="Мастер", skill="coding", act=ok)),
+        ]
+        bus = EventBus()
+        queue = bus.subscribe()
+        __import__("asyncio").run(pid1_cycle(bus, 5, "карантин в браузере", specs=specs))
+        events = []
+        while not queue.empty():
+            events.append(queue.get(timeout=1))
+        quarantine = next(event for event in events if event["type"] == "pid1_quarantined")
+        self.assertEqual(quarantine["agent"], "Брак")
+        self.assertEqual(quarantine["skill"], "broken")
+        self.assertEqual(quarantine["cycle"], 5)
+        verdict = events[-1]
+        self.assertEqual(verdict["type"], "automaton_verdict")
+        self.assertTrue(verdict["accepted"])  # экипаж продолжается без бракодела
+        self.assertIn("Брак", verdict["quarantined"])
 
 
 class TestHTTPSurface(unittest.TestCase):

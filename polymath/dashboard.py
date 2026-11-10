@@ -15,8 +15,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from queue import Empty, Full, Queue
 
 from .agent import Agent
-from .crews import demo_agents
+from .automaton import AutomatonPid1
+from .crews import demo_agents, pid1_demo_specs
 from .orchestrator import PolymathOrchestrator
+from .supervisor import LIMITS, AuditViolation, audit
 
 DEMO_TASKS = (
     "построить уникальный проект",
@@ -76,7 +78,7 @@ def _live(bus: EventBus, agent: Agent) -> Agent:
 
 
 async def orchestration_cycle(bus: EventBus, cycle: int, task: str) -> None:
-    """Один цикл: run_started → agent_started/finished → synthesis."""
+    """Один цикл: run_started → agent_started/finished → synthesis → verdict."""
     crew = demo_agents()
     bus.publish(
         {
@@ -100,6 +102,56 @@ async def orchestration_cycle(bus: EventBus, cycle: int, task: str) -> None:
             "motto": PolymathOrchestrator.motto,
         }
     )
+    try:
+        verdicts = audit(synthesis)
+    except AuditViolation as exc:  # инвариант нарушен — браузер узнает красным
+        bus.publish({"type": "violation", "cycle": cycle, "message": str(exc)})
+    else:
+        bus.publish(
+            {
+                "type": "verdict",
+                "cycle": cycle,
+                "verdicts": verdicts,
+                "limits": list(LIMITS),
+                "motto": PolymathOrchestrator.motto,
+            }
+        )
+
+
+async def pid1_cycle(
+    bus: EventBus,
+    cycle: int,
+    task: str,
+    specs: list | None = None,
+) -> None:
+    """Цикл ПИД1 под автоматом: слово символов летит в браузер, карантин — красным.
+
+    Каждый новый вызов — новый экипаж (:func:`pid1_demo_specs` выдаёт свежий):
+    Кузнец снова бракует два удара, ПИД1 снова учит. Отклонённое слово
+    не убивает цикл — машина просит новый мандат прямо в браузере.
+    """
+
+    def sink(event: dict) -> None:
+        payload = dict(event)
+        payload["cycle"] = cycle
+        bus.publish(payload)
+
+    crew = pid1_demo_specs() if specs is None else specs
+    pid1 = AutomatonPid1(crew, on_event=sink)
+    report = await pid1.drive(task)
+    bus.publish(
+        {
+            "type": "automaton_verdict",
+            "cycle": cycle,
+            "accepted": report.accepted,
+            "final_state": report.final_state,
+            "steps": report.steps,
+            "quarantined": list(report.quarantined),
+            "attempts": report.attempts,
+            "completions": report.completions,
+            "restarts": report.restarts,
+        }
+    )
 
 
 async def _orchestrate_forever(bus: EventBus, stop: threading.Event) -> None:
@@ -107,7 +159,10 @@ async def _orchestrate_forever(bus: EventBus, stop: threading.Event) -> None:
     while not stop.is_set():
         task = DEMO_TASKS[cycle % len(DEMO_TASKS)]
         try:
-            await orchestration_cycle(bus, cycle, task)
+            if cycle % 2 == 0:
+                await orchestration_cycle(bus, cycle, task)
+            else:  # нечётные циклы — экипаж под ПИД1 и автоматом
+                await pid1_cycle(bus, cycle, task)
         except Exception as exc:  # noqa: BLE001 — цикл не должен умирать
             bus.publish({"type": "error", "message": repr(exc)})
         cycle += 1
@@ -148,6 +203,13 @@ PAGE = """<!doctype html>
   .stat span { font-size:12px; color:var(--dim); }
   #log { margin-top:16px; background:#08070e; border:1px solid var(--line); border-radius:10px; padding:12px; font-family:ui-monospace,Consolas,monospace; font-size:12px; color:var(--dim); height:150px; overflow:auto; }
   #log .g { color:var(--gold); } #log .e { color:var(--ember); }
+  .verdict { margin-top:12px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:13px; color:var(--dim); white-space:pre-line; }
+  .verdict b { color:inherit; }
+  .verdict.ok { border-color:#7ec96f; color:#a5e79a; background:rgba(126,201,111,.08); }
+  .verdict.bad { border-color:var(--ember); color:var(--ember); background:rgba(255,122,69,.08); animation:pulse 1s infinite alternate; }
+  .card.quarantine { border-color:#ff4545; background:rgba(255,69,69,.10); }
+  .card.quarantine .dot { background:#ff4545; animation:pulse .6s infinite alternate; }
+  .card.quarantine .time { color:#ff8a8a; }
 </style>
 </head>
 <body>
@@ -166,6 +228,7 @@ PAGE = """<!doctype html>
     <div class="stat"><b id="s-save">—</b><span>экономия, с</span></div>
   </div>
   <ul id="s-findings"></ul>
+  <div id="verdict" class="verdict">👀 Надзиратель ждёт первого прогона… 🤖 автомат ведёт нечётные циклы сам</div>
 </div>
 <div id="log"></div>
 <script>
@@ -174,7 +237,9 @@ const grid = document.getElementById('crew');
 const log = document.getElementById('log');
 const stamp = () => new Date().toLocaleTimeString('ru-RU');
 function logLine(type, text) {
-  const cls = type === 'synthesis' ? 'g' : (type === 'error' ? 'e' : '');
+  const gold = ['synthesis', 'verdict', 'automaton_verdict'].includes(type);
+  const red = ['error', 'violation', 'pid1_quarantined', 'pid1_child_down'].includes(type);
+  const cls = gold ? 'g' : (red ? 'e' : '');
   const div = document.createElement('div');
   div.innerHTML = `<span class="${cls}">[${stamp()}] ${type}</span> ${text}`;
   log.prepend(div);
@@ -220,6 +285,60 @@ es.onmessage = (e) => {
     document.getElementById('s-save').textContent = (ev.sequential_seconds - ev.parallel_seconds).toFixed(2);
     document.getElementById('s-findings').innerHTML = ev.findings.map(f => `<li>${f}</li>`).join('');
     logLine(ev.type, `${ev.task} — ${ev.parallel_seconds}s вместо ${ev.sequential_seconds}s`);
+  }
+  if (ev.type === 'verdict') {
+    const v = document.getElementById('verdict');
+    v.className = 'verdict ok';
+    v.textContent = `👀 ВЕРДИКТ НАДЗИРАТЕЛЯ · цикл #${ev.cycle}: инварианты соблюдены — ` + ev.verdicts.join(' · ')
+      + '\n⚠ пределы надзора (Гёдель II — вердикт не полон): ' + ev.limits.join(' · ');
+    logLine(ev.type, `инварианты соблюдены (${ev.verdicts.length} проверки, ${ev.limits.length} предела объявлено)`);
+  }
+  if (ev.type === 'violation') {
+    const v = document.getElementById('verdict');
+    v.className = 'verdict bad';
+    v.textContent = `🚨 НАРУШЕНИЕ ИНВАРИАНТА · цикл #${ev.cycle}: ${ev.message}`;
+    logLine(ev.type, ev.message);
+  }
+  if (ev.type === 'pid1_child_down') {
+    const c = ensureCard({name: ev.agent, skill: ev.skill});
+    c.el.className = 'card run';
+    c.time.textContent = `упал (попытка ${ev.attempt}) — ПИД1 рестартует…`;
+    logLine(ev.type, `${ev.agent} упал — ПИД1 рестартует, экипаж не тронут (one_for_one)`);
+  }
+  if (ev.type === 'pid1_child_up') {
+    const c = ensureCard({name: ev.agent, skill: ev.skill});
+    c.el.className = 'card done';
+    c.time.textContent = `жив: сердце №${ev.heartbeat} (${ev.seconds}s)`;
+    logLine(ev.type, `${ev.agent} жив: сердце №${ev.heartbeat} (${ev.seconds}s)`);
+  }
+  if (ev.type === 'pid1_quarantined') {
+    const c = ensureCard({name: ev.agent, skill: ev.skill});
+    c.el.className = 'card quarantine';
+    c.time.textContent = `🚨 КВАРАНТИН (${ev.failures} падений)`;
+    const v = document.getElementById('verdict');
+    v.className = 'verdict bad';
+    v.textContent = `🚨 КВАРАНТИН · цикл #${ev.cycle}: ${ev.agent} изолирован (${ev.failures} падений) — экипаж продолжается без него. Падение — данные, а не приговор.`;
+    logLine(ev.type, `${ev.agent} → карантин: экипаж продолжается без бракодела`);
+  }
+  if (ev.type === 'pid1_verdict') {
+    logLine(ev.type, `надзиратель: ${ev.verdicts.length} инвариантов соблюдено (раундов: ${ev.rounds})`);
+  }
+  if (ev.type === 'automaton_step') {
+    logLine(ev.type, `δ: ${ev.symbol} → ${ev.state} (шаг ${ev.step})`);
+  }
+  if (ev.type === 'automaton_verdict') {
+    const v = document.getElementById('verdict');
+    if (ev.accepted) {
+      v.className = 'verdict ok';
+      v.textContent = `🤖 АВТОМАТ ПРИНЯЛ ПРОГОН · цикл #${ev.cycle}: слово из ${ev.steps} символов → «${ev.final_state}»; попыток: ${ev.attempts} = успехов ${ev.completions} + рестартов ${ev.restarts}`
+        + (ev.quarantined.length ? `; в карантине: ${ev.quarantined.join(', ')}` : '')
+        + '\n⚠ пределы надзора (Гёдель II) не отменены — вердикт не полон';
+      logLine(ev.type, `слово принято автоматом (${ev.steps} символов → ${ev.final_state})`);
+    } else {
+      v.className = 'verdict bad';
+      v.textContent = `🤖 АВТОМАТ ОТКЛОНИЛ СЛОВО · цикл #${ev.cycle}: финал «${ev.final_state}» — экипаж пуст, ПИД1 жив и просит новый мандат`;
+      logLine(ev.type, 'слово отклонено — эмпатия: машина просит, а не умирает');
+    }
   }
   if (ev.type === 'error') logLine(ev.type, ev.message);
 };
