@@ -1,4 +1,4 @@
-"""CLI Полимата: живая демонстрация параллельной мультиагентности."""
+"""CLI Полимата: демо, MCP-сервер и живой дашборд."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import argparse
 import asyncio
 import sys
 
-from .agent import Agent
+from .crews import demo_agents
 from .orchestrator import PolymathOrchestrator, Synthesis
 
 MOTTO = "Одно другое не исключает."
@@ -17,49 +17,13 @@ BANNER = r"""
 | '_ \ / _ \ | |/ _ \ | | | '_ ` _ \ / _ \ '_ \ / _` | / _` |/ _ \ \ / /
 | |_) |  __/ | |  __/ |_| | | | | | |  __/ | | | (_| || (_| |  __/\ V /
 |_.__/ \___|_|_|\___|\__,_|_| |_| |_|\___|_| |_|\__,_| \__,_|\___| \_/
-              ПОЛИМАТ = МУЛЬТИАГЕНТ  |  v0.1.0
+              ПОЛИМАТ = МУЛЬТИАГЕНТ  |  v0.2.0
 """
-
-
-def _demo_agents() -> list[Agent]:
-    """Четыре агента с разными навыками и разной «скоростью»."""
-
-    async def scout(task: str) -> list[str]:
-        await asyncio.sleep(0.3)
-        return [
-            f"Разведка: собран контекст по «{task}»",
-            "Разведка: мировые аналоги найдены и проанализированы",
-        ]
-
-    async def architect(task: str) -> list[str]:
-        await asyncio.sleep(0.5)
-        return [f"Архитектура: схема из 3 модулей для «{task}» готова"]
-
-    async def coder(task: str) -> list[str]:
-        await asyncio.sleep(0.7)
-        return [
-            f"Код: каркас «{task}» собран",
-            "Код: тесты написаны и зелёные",
-        ]
-
-    async def critic(task: str) -> list[str]:
-        await asyncio.sleep(0.4)
-        return [
-            "Критика: риски под контролем",
-            f"Критика: «{task}» жизнеспособен",
-        ]
-
-    return [
-        Agent(name="Скаут", skill="research", act=scout),
-        Agent(name="Зодчий", skill="architecture", act=architect),
-        Agent(name="Кузнец", skill="coding", act=coder),
-        Agent(name="Софист", skill="critique", act=critic),
-    ]
 
 
 def run_demo() -> Synthesis:
     """Прогнать демо-оркестрацию и вернуть синтез (удобно для тестов)."""
-    orchestrator = PolymathOrchestrator(_demo_agents())
+    orchestrator = PolymathOrchestrator(demo_agents())
     synthesis = asyncio.run(orchestrator.solve("построить уникальный проект"))
     print(BANNER)
     print(f"Мотто: {MOTTO}")
@@ -72,8 +36,24 @@ def run_demo() -> Synthesis:
     return synthesis
 
 
+def run_mcp() -> int:
+    """Запустить MCP-сервер (stdio). Требует extra: ``[mcp]``."""
+    from .mcp_server import mcp
+
+    mcp.run()
+    return 0
+
+
+def run_dashboard(host: str, port: int) -> int:
+    """Запустить живой веб-дашборд оркестрации."""
+    from .dashboard import serve
+
+    serve(host=host, port=port)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    """Точка входа CLI: ``polymath`` или ``polymath demo``."""
+    """Точка входа CLI: ``polymath {demo|mcp|dashboard}``."""
     parser = argparse.ArgumentParser(
         prog="polymath",
         description="Полимат = Мультиагент: параллельная оркестрация уникальных навыков",
@@ -82,12 +62,22 @@ def main(argv: list[str] | None = None) -> int:
         "command",
         nargs="?",
         default="demo",
-        choices=["demo"],
+        choices=["demo", "mcp", "dashboard"],
         help="команда (по умолчанию — demo)",
+    )
+    parser.add_argument(
+        "--host", default="127.0.0.1", help="хост дашборда (по умолчанию 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=8765, help="порт дашборда (по умолчанию 8765)"
     )
     args = parser.parse_args(argv)
     if args.command == "demo":
         run_demo()
+    elif args.command == "mcp":
+        return run_mcp()
+    elif args.command == "dashboard":
+        return run_dashboard(args.host, args.port)
     return 0
 
 

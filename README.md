@@ -4,6 +4,8 @@
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://github.com/astral-sh/ruff)
+![MCP](https://img.shields.io/badge/MCP-server--ready-2d00f7)
+![Dashboard](https://img.shields.io/badge/dashboard-SSE--live-D9A441)
 ![Мотто](https://img.shields.io/badge/одно_другое_не_исключает-⚡-red)
 
 > **Одно другое не исключает.**
@@ -93,19 +95,63 @@ except DuplicateSkillError as e:
 ## ✅ Тесты и CI
 
 ```bash
-pytest -q      # 7 тестов: контракт навыков, параллельность, синтез
+pytest -q      # 19 тестов: контракт навыков, параллельность, синтез, MCP, SSE
 ruff check .   # чистота кода
 ```
 
 GitHub Actions гоняет матрицу Python 3.10 → 3.13 на каждый push.
 
+## 🔌 MCP-сервер · v0.2
+
+Полимат теперь — **инструмент для любых LLM-хостов**: Claude Desktop, IDE-агенты и любой
+MCP-клиент оркестрируют экипаж, не устанавливая ничего сверх протокола.
+
+```bash
+pip install "polymath-multiagent[mcp]"
+```
+
+Конфигурация MCP-хоста:
+
+```json
+{
+  "mcpServers": {
+    "polymath": { "command": "polymath", "args": ["mcp"] }
+  }
+}
+```
+
+| Инструмент / ресурс | Что даёт |
+|---|---|
+| `polymath_info` | паспорт: версия, мотто, состав экипажа |
+| `orchestrate(task)` | параллельный прогон 4 агентов + измеренный выигрыш времени |
+| `polymath://motto` | мотто проекта одной строкой |
+| `polymath://skills` | уникальные навыки экипажа |
+
+Проверка без внешних хостов: `fastmcp.Client` подключается к серверу прямо в памяти —
+этими тестами CI и живёт (`tests/test_mcp_server.py`).
+
+## 📊 Живой дашборд оркестрации
+
+```bash
+polymath dashboard --port 8765   # открыть http://127.0.0.1:8765
+```
+
+Экипаж живёт в фоне бесконечными циклами оркестрации; события агент-за-агентом летят
+в браузер по **Server-Sent Events**. Ноль зависимостей — чистый stdlib:
+`http.server` + `asyncio` + одна шина событий.
+
+- 🔴 карточка агента пульсирует, пока он работает, и зеленеет, когда закончил
+- 💰 панель «СИНТЕЗ» считает экономию времени от параллельности в реальном времени
+- 📜 журнал событий внизу — каждый цикл, каждый агент
+
 ## 🗺️ Дорожная карта
 
 | Фаза | Что будет |
 |------|-----------|
-| v0.2 | MCP-сервер: Полимат как инструменты для любых LLM-хостов |
-| v0.3 | Распределённый режим: агенты в разных процессах/на разных машинах |
-| v0.4 | Веб-дашборд оркестрации в реальном времени |
+| v0.2 | ✅ **MCP-сервер** — Полимат как инструменты для любых LLM-хостов |
+| v0.3 | ✅ **Живой дашборд** — SSE-оркестрация в браузере, stdlib-only |
+| v0.4 | Распределённый режим: агенты в разных процессах/на разных машинах |
+| v0.5 | Опциональные LLM-провайдеры внутри агентов |
 
 ## 🇬🇧 English in one paragraph
 
@@ -113,8 +159,11 @@ GitHub Actions гоняет матрицу Python 3.10 → 3.13 на кажды�
 Its philosophy is enforced in code: agents with unique skills run **simultaneously**
 (`asyncio.gather`), duplicate skills are rejected at construction time with
 `DuplicateSkillError`, and findings are merged into a deduplicated, order-preserving
-`Synthesis`. Install with `pip install -e ".[dev]"`, run `polymath demo`, and watch
-four agents finish in the time of the slowest one.
+`Synthesis`. v0.2 ships an **MCP server** (`pip install "polymath-multiagent[mcp]"` —
+usable from Claude Desktop and any MCP host) and a **live SSE dashboard**
+(`polymath dashboard`) with zero runtime dependencies. Install with
+`pip install -e ".[dev]"`, run `polymath demo`, and watch four agents finish in the
+time of the slowest one.
 
 ## 📄 Лицензия
 
