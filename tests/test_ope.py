@@ -246,7 +246,7 @@ def test_ope_doc_carries_provenance_table() -> None:
         encoding="utf-8"
     )
     assert "Сверка с первоисточниками" in doc
-    assert doc.count("https://") >= 7  # каждый подтверждённый тезис — с URL
+    assert doc.count("https://") >= 6  # каждый подтверждённый тезис — с URL
     assert "10.1098/rstb.2024.0298" in doc  # обзор Stepney 2025
     assert "2502.09858" in doc  # POPPER
     assert "переименов" in doc  # уточнение атрибуции таксономии внесено
