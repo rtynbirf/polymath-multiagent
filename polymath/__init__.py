@@ -12,7 +12,7 @@ from .pid1 import ChildSpec, PolymathPid1, QuarantinedError
 from .ritual import HouseRitual, RitualViolation, house_law_agent
 from .supervisor import LIMITS, AuditViolation, audit, supervisor_agent
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 __all__ = [
     "LIMITS",

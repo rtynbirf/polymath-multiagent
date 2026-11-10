@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "polymath-multiagent"
-version = "0.5.0"
+version = "0.5.1"
 description = "Полимат = Мультиагент: параллельная оркестрация агентов, где одно другое не исключает"
 readme = "README.md"
 requires-python = ">=3.10"
