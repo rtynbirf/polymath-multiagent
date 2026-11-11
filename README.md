@@ -1,5 +1,14 @@
 # 🧠 POLYMATH = MULTIAGENT
 
+<!--ФОРЖ:МУЗА:НАЧАЛО-->
+<div align="center">
+  <img src="repo-muse.svg" width="100%" alt="Муза polymath-multiagent: картина кузни ПОЛИМАТ, раунд 9" />
+  <br/>
+  <img src="forge-divider.svg" width="62%" alt="разделитель кузни ПОЛИМАТ" />
+</div>
+<!--ФОРЖ:МУЗА:КОНЕЦ-->
+
+
 [![CI](https://github.com/rtynbirf/polymath-multiagent/actions/workflows/ci.yml/badge.svg)](https://github.com/rtynbirf/polymath-multiagent/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -389,3 +398,10 @@ not declared: 33 → 50 words. Install with `pip install -e ".[dev]"`, run
 ## 📄 Лицензия
 
 [MIT](LICENSE) — **rtynbirf · Полимат-Универсум** · 2026
+
+<!--ФОРЖ:ПОДВАЛ-->
+---
+
+<div align="center">
+  <sub>◆ картина и штандарт — ручная ковка <a href="https://github.com/rtynbirf">КУЗНИ ПОЛИМАТ</a> · ЧЕЛОВЕК=АККАУНТ=PID1 ◆</sub>
+</div>
