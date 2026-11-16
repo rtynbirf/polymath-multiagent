@@ -8,6 +8,16 @@
 </div>
 <!--ФОРЖ:МУЗА:КОНЕЦ-->
 
+<!--ФОРЖ:ПАСПОРТ:НАЧАЛО-->
+<div align="center">
+  <img src="revo-page.svg" width="100%" alt="РЕВО-паспорт страницы REVO: строение файлов, лексикон, числа — по фактическому контенту" />
+</div>
+
+| ФАЙЛОВ | ПАПОК | КОММИТОВ | ОБНОВЛЕНО | РЕЛИЗОВ |
+|---:|---:|---:|---|---:|
+| 40 | 5 | 1 | 2026-11-15 | 1 |
+<!--ФОРЖ:ПАСПОРТ:КОНЕЦ-->
+
 
 
 [![CI](https://github.com/rtynbirf/polymath-multiagent/actions/workflows/ci.yml/badge.svg)](https://github.com/rtynbirf/polymath-multiagent/actions/workflows/ci.yml)
