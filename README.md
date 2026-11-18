@@ -2,15 +2,15 @@
 
 <!--ФОРЖ:МУЗА:НАЧАЛО-->
 <div align="center">
-  <img src="repo-muse.svg" width="100%" alt="Муза polymath-multiagent: мастерская ЛИСИЦКИЙ · КЛИН, кузня ПОЛИМАТ, раунд 12 · REVE=РЕВО" />
+  <img src="https://cdn.jsdelivr.net/gh/rtynbirf/polymath-multiagent@main/repo-muse.svg" width="100%" alt="Муза polymath-multiagent: мастерская ЛИСИЦКИЙ · КЛИН, кузня ПОЛИМАТ, раунд 12 · REVE=РЕВО" />
   <br/>
-  <img src="forge-divider.svg" width="62%" alt="делитель мастерской ЛИСИЦКИЙ · КЛИН" />
+  <img src="https://cdn.jsdelivr.net/gh/rtynbirf/polymath-multiagent@main/forge-divider.svg" width="62%" alt="делитель мастерской ЛИСИЦКИЙ · КЛИН" />
 </div>
 <!--ФОРЖ:МУЗА:КОНЕЦ-->
 
 <!--ФОРЖ:ПАСПОРТ:НАЧАЛО-->
 <div align="center">
-  <img src="revo-page.svg" width="100%" alt="РЕВО-паспорт страницы polymath-multiagent: строение файлов, лексикон, числа — по фактическому контенту" />
+  <img src="https://cdn.jsdelivr.net/gh/rtynbirf/polymath-multiagent@main/revo-page.svg" width="100%" alt="РЕВО-паспорт страницы polymath-multiagent: строение файлов, лексикон, числа — по фактическому контенту" />
 </div>
 
 | ФАЙЛОВ | ПАПОК | КОММИТОВ | ОБНОВЛЕНО | РЕЛИЗОВ |
