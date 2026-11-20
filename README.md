@@ -406,6 +406,30 @@ verdict-ladder DFA (self-approved verdicts are BLOCKED). Ω growth is measured,
 not declared: 33 → 50 words. Install with `pip install -e ".[dev]"`, run
 `polymath demo`, and watch four agents finish in the time of the slowest one.
 
+## 🧠 UNIVERSAL = МОЗГ ВНУТРИ РОЯ (0.6.0, слияние ADR-0007)
+
+С версии 0.6.0 здесь живёт **ЦУА** — Universal Agent, поглощённый из
+репозитория `universal-agent` (ADR/0007): один целостный мозг на одной LLM
+(OpenAI-совместимый рантайм), четыре контура памяти на SQLite+FTS5,
+руки-инструменты (файлы workspace, исполнение Python в песочнице RLIMIT
+с опциональным docker `--network none --read-only --cap-drop ALL`,
+веб-поиск без ключей), внутренний цикл воли АНАЛИЗ → ПЛАН → ДЕЙСТВИЕ →
+РЕФЛЕКСИЯ и автономный демон очереди задач. Только стандартная библиотека.
+
+Мост `polymath.universal_bridge` превращает мозг в обычного агента роя
+с уникальным навыком `universal-solve`: ЦУА решает задачу целиком
+(до финиша или честного PARTIAL), оркестратор гоняет его параллельно со
+скаутами и синтезирует находки. Дубликат навыка исключён контрактом —
+второй ЦУА в рое собрать нельзя, как и положено: дублей не плодим.
+
+Запуск мозга напрямую:
+
+```bash
+python -m universal.brain task --task "Изучи каталог ./workspace и составь README.md"
+python -m universal.brain daemon          # демон воли: echo "задача" >> task_queue.txt
+python universal/healthcheck.py           # сверка A2A-карточки с живым поведением
+```
+
 ## 📄 Лицензия
 
 [MIT](LICENSE) — **rtynbirf · Полимат-Универсум** · 2026

@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "polymath-multiagent"
-version = "0.5.1"
+version = "0.6.0"
 description = "Полимат = Мультиагент: параллельная оркестрация агентов, где одно другое не исключает"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "rtynbirf" }]
-keywords = ["multi-agent", "ai-agents", "asyncio", "orchestration", "polymath", "llm"]
+keywords = ["multi-agent", "ai-agents", "asyncio", "orchestration", "polymath", "llm", "universal-agent", "memory", "sandbox"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -27,9 +27,10 @@ dev = ["pytest>=8", "ruff>=0.6", "fastmcp>=2.10,<3", "pyyaml>=6"]
 
 [project.scripts]
 polymath = "polymath.cli:main"
+universal = "universal.brain:main"
 
 [tool.setuptools.packages.find]
-include = ["polymath*"]
+include = ["polymath*", "universal*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
