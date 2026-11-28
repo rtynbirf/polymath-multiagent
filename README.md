@@ -1,4 +1,8 @@
-# 🧠 POLYMATH = MULTIAGENT
+<div align="center">
+
+<a href="https://github.com/rtynbirf/polymath-multiagent"><img src="banner.png" width="100%" alt="polymath-multiagent — штандарт мастерской в каноне ORNAMENTAL MYTHO-REALISM"></a>
+
+</div>
 
 <!--ФОРЖ:МУЗА:НАЧАЛО-->
 <div align="center">
@@ -10,13 +14,21 @@
 
 <!--ФОРЖ:ПАСПОРТ:НАЧАЛО-->
 <div align="center">
-  <img src="https://cdn.jsdelivr.net/gh/rtynbirf/polymath-multiagent@main/revo-page.svg" width="100%" alt="РЕВО-паспорт страницы polymath-multiagent: строение файлов, лексикон, числа — по фактическому контенту" />
+  <img src="revo-page.svg" width="100%" alt="РЕВО-паспорт страницы polymath-multiagent №44 в каноне ORNAMENTAL MYTHO-REALISM: орнаментальная решётка, медальон-миф, строение файлов, лексикон — по фактическому контенту" />
 </div>
 
 | ФАЙЛОВ | ПАПОК | КОММИТОВ | ОБНОВЛЕНО | РЕЛИЗОВ |
 |---:|---:|---:|---|---:|
-| 43 | 5 | 42 | 2026-11-18 | 1 |
+| 71 | 9 | 1 | 2026-11-28 | 1 |
 <!--ФОРЖ:ПАСПОРТ:КОНЕЦ-->
+
+# 🧠 POLYMATH = MULTIAGENT
+
+<p align="center"><img src="https://cdn.jsdelivr.net/gh/rtynbirf/polymath-multiagent@main/.github/social-preview.png" alt="polymath-multiagent" width="100%"></p>
+
+
+
+
 
 
 
