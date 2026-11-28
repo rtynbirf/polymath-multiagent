@@ -22,6 +22,18 @@
 | 71 | 9 | 1 | 2026-11-28 | 1 |
 <!--ФОРЖ:ПАСПОРТ:КОНЕЦ-->
 
+# polymath-multiagent
+
+<div align="center">
+
+<a href="https://github.com/rtynbirf/polymath-multiagent"><img src="banner.png" width="100%" alt="polymath-multiagent — штандарт мастерской в каноне ORNAMENTAL MYTHO-REALISM"></a>
+
+</div>
+
+
+
+
+
 # 🧠 POLYMATH = MULTIAGENT
 
 <p align="center"><img src="https://cdn.jsdelivr.net/gh/rtynbirf/polymath-multiagent@main/.github/social-preview.png" alt="polymath-multiagent" width="100%"></p>
